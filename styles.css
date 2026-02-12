@@ -1,0 +1,283 @@
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            overflow: auto;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 350px 350px 1fr;
+            grid-template-rows: auto 1fr;
+            grid-template-areas:
+                "header header header"
+                "left-top right-top frames";
+            gap: 15px;
+            padding: 15px;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+        
+        h1 {
+            grid-area: header;
+            text-align: center;
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+        
+        .left-panel {
+            grid-area: left-top;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .right-top-panel {
+            grid-area: right-top;
+            max-width: 400px;
+        }
+        
+        .right-bottom-panel {
+            grid-area: frames;
+        }
+        
+        .upload-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-height: 200px;
+            text-align: center;
+        }
+        
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 6px;
+            padding: 30px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #2980b9;
+            background-color: #f8f9fa;
+        }
+        
+        .upload-area.dragover {
+            border-color: #27ae60;
+            background-color: #e8f5e9;
+        }
+        
+        .upload-icon {
+            font-size: 36px;
+            color: #3498db;
+            margin-bottom: 8px;
+        }
+        
+        #videoFile {
+            display: none;
+        }
+        
+        .controls-section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 2px;
+            font-weight: bold;
+            color: #555;
+            font-size: 12px;
+        }
+        
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .control-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .control-row .control-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        .extract-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            margin-top: 5px;
+        }
+        
+        .extract-btn:hover {
+            background-color: #219a52;
+        }
+        
+        .extract-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .preview-section {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .frames-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .frame-item {
+            text-align: center;
+            padding: 5px;
+            background-color: white;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            margin: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .frame-image-container {
+            background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), 
+                              linear-gradient(-45deg, #ccc 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #ccc 75%), 
+                              linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            background-size: 10px 10px;
+            background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+        
+        .frame-image {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .checkerboard-bg {
+            background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), 
+                              linear-gradient(-45deg, #ccc 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #ccc 75%), 
+                              linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            background-size: 10px 10px;
+            background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+        }
+        
+        .frame-info {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .download-btn {
+            margin-top: 8px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+        
+        .video-preview {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        #previewVideo {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+        }
+        
+        h3 {
+            margin: 0 0 10px 0;
+            color: #34495e;
+            font-size: 16px;
+        }
+        
+        .small {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto auto;
+                grid-template-areas:
+                    "header"
+                    "left-top"
+                    "right-top"
+                    "right-bottom";
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+            }
+            
+            .upload-section,
+            .controls-section,
+            .preview-section {
+                height: auto;
+                min-height: 200px;
+            }
+            
+            .frames-container {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }

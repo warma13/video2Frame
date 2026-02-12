@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频帧提取工具</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>视频帧提取工具</h1>
+        
+        <div class="left-panel">
+            <div class="upload-section">
+                <div class="upload-area" id="uploadArea" style="padding: 10px; min-height: 100px; text-align: center;">
+                    <div class="upload-icon" style="font-size: 16px;">📹</div>
+                    <p style="font-size: 12px; margin: 5px 0;">上传视频</p>
+                    <p class="small" style="margin: 5px 0;">支持 MP4、WebM、Ogg 等格式</p>
+                    <input type="file" id="videoFile" accept="video/*" style="font-size: 11px;">
+                </div>
+                
+                <div class="video-preview" id="videoPreview" style="display: none;">
+                    <h3>视频预览</h3>
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            <video id="previewVideo" controls></video>
+                            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
+                        <button class="extract-btn" id="rewindSecondBtn" style="width: 40px; height: 40px; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center;">⏪</button>
+                        <button class="extract-btn" id="rewindFrameBtn" style="width: 40px; height: 40px; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center;">◀</button>
+                        <button class="extract-btn" id="playPauseBtn" style="width: 40px; height: 40px; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center;">▶</button>
+                        <button class="extract-btn" id="forwardFrameBtn" style="width: 40px; height: 40px; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center;">▷</button>
+                        <button class="extract-btn" id="forwardSecondBtn" style="width: 40px; height: 40px; font-size: 16px; padding: 0; display: flex; align-items: center; justify-content: center;">⏩</button>
+                    </div>
+                            <div style="display: flex; justify-content: center; margin-top: 10px;">
+                                <button class="extract-btn" id="setFirstFrameTimeBtn" style="width: auto; font-size: 12px; padding: 5px 10px;">将当前时间设为首帧时间点</button>
+                            </div>
+                        </div>
+                        <div id="videoInfo" style="width: 250px; padding: 10px; background-color: #f8f9fa; border-radius: 4px; text-align: left; font-size: 12px;">
+                            <p><strong>文件名：</strong><span id="videoFileName">未选择</span></p>
+                            <p><strong>分辨率：</strong><span id="videoResolution">未选择</span></p>
+                            <p><strong>时长：</strong><span id="videoDuration">未选择</span></p>
+                            <p><strong>文件大小：</strong><span id="videoFileSize">未选择</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="preview-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>播放控制</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="extract-btn" id="playFramesControlBtn" disabled style="width: auto; padding: 5px 10px;">开始</button>
+                        <button class="extract-btn" id="stopFramesBtn" disabled style="width: auto; padding: 5px 10px; background-color: #e74c3c;">停止</button>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                    <div class="control-group">
+                        <label for="frameDuration">每帧播放时长（秒）</label>
+                        <input type="number" id="frameDuration" min="0.1" step="0.1" value="0.5">
+                    </div>
+                    
+                    <div style="border: 1px solid #ddd; border-radius: 4px; padding: 15px; text-align: center;">
+                        <h4>播放预览</h4>
+                        <div id="playbackPreview" style="width: 100%; height: 150px; background-color: #f8f9fa; border-radius: 4px; display: flex; justify-content: center; align-items: center; margin-bottom: 15px;">
+                            <img id="previewImage" style="max-width: 100%; max-height: 140px; display: none;" />
+                            <p id="previewText" style="color: #666;">点击播放按钮开始预览</p>
+                        </div>
+                        <p class="small" style="margin-top: 10px;">在控制区内循环播放提取的帧</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    <!-- 图片预览模态框 -->
+    <div id="imagePreviewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center;">
+        <img id="previewModalImage" style="max-width: 90%; max-height: 90%;" />
+        <button id="closePreviewModal" style="position: absolute; top: 20px; right: 20px; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer;">×</button>
+    </div>
+    
+    <!-- 水印选择模态框 -->
+    <div id="watermarkSelectionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 2000;">
+        <div style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); max-width: 30%; max-height: 25%;">
+            <div style="position: relative;">
+                <img id="watermarkSelectionImage" style="width: 100%; height: auto; object-fit: contain;" />
+                <div id="selectionBox" style="position: absolute; border: 2px dashed #ff0000; background-color: rgba(255,0,0,0.2); display: none; z-index: 10;"></div>
+            </div>
+        </div>
+        <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: white; padding: 10px 20px; border-radius: 4px; display: flex; gap: 10px;">
+            <button id="confirmWatermarkBtn" class="extract-btn" style="width: auto;">确认选择</button>
+            <button id="cancelWatermarkBtn" class="extract-btn" style="width: auto; background-color: #e74c3c;">取消</button>
+        </div>
+        <button id="closeWatermarkModal" style="position: absolute; top: 20px; right: 20px; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer;">×</button>
+    </div>
+    
+    <div class="right-top-panel">
+            <div class="controls-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>提取设置</h3>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select id="saveFormat" style="padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                            <option value="png" selected>PNG</option>
+                            <option value="jpeg">JPEG</option>
+                        </select>
+                        <button class="extract-btn" id="extractBtn" disabled style="width: auto; padding: 5px 10px;">提取</button>
+                    </div>
+                </div>
+                
+                <div class="control-row" style="display: flex; gap: 15px; align-items: center;">
+                    <div class="control-group" style="display: flex; align-items: center; gap: 5px;">
+                        <label for="extractMethod" style="font-size: 11px; white-space: nowrap;">提取方式</label>
+                        <select id="extractMethod" style="width: auto; font-size: 11px;">
+                            <option value="interval">按时间间隔</option>
+                            <option value="specific">指定时间点</option>
+                            <option value="total">提取指定数量</option>
+                            <option value="startEnd" selected>首尾帧检测</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group" id="totalFramesControl" style="display: none; align-items: center; gap: 5px;">
+                        <label for="totalFrames" style="font-size: 11px; white-space: nowrap;">提取总帧数</label>
+                        <input type="number" id="totalFrames" min="1" max="100" value="4" style="width: auto; font-size: 11px;">
+                    </div>
+                </div>
+                
+                <div class="control-row" style="display: flex; gap: 15px; align-items: center;">
+                    <div class="control-group" id="startTimeControl" style="display: none; align-items: center; gap: 5px;">
+                        <label for="startTime" style="font-size: 11px; white-space: nowrap;">检测开始时间（秒）</label>
+                        <input type="number" id="startTime" min="0" step="0.1" value="1" style="width: auto; font-size: 11px;">
+                    </div>
+                    
+                    <div class="control-group" id="firstFrameTimeControl" style="display: none; align-items: center; gap: 5px;">
+                        <label for="firstFrameTime" style="font-size: 11px; white-space: nowrap;">首帧时间点（秒）</label>
+                        <input type="number" id="firstFrameTime" min="0" step="0.1" value="0" style="width: auto; font-size: 11px;">
+                    </div>
+                    
+                    <div class="control-group" id="intervalControl" style="display: flex; align-items: center; gap: 5px;">
+                        <label for="interval" style="font-size: 11px; white-space: nowrap;">时间间隔（秒）</label>
+                        <input type="number" id="interval" min="0.1" step="0.1" value="1" style="width: auto; font-size: 11px;">
+                    </div>
+                </div>
+                
+                <div class="control-row" id="detectionParamsControl" style="display: none; gap: 15px; align-items: center;">
+                    <div class="control-group" style="display: flex; align-items: center; gap: 5px;">
+                        <label for="detectionStep" style="font-size: 11px; white-space: nowrap;">检测步长（秒）</label>
+                        <input type="number" id="detectionStep" min="0.1" step="0.1" value="0.2" style="width: auto; font-size: 11px;">
+                    </div>
+                    
+                    <div class="control-group" style="display: flex; align-items: center; gap: 5px;">
+                        <label for="detectionThreshold" style="font-size: 11px; white-space: nowrap;">相似度阈值</label>
+                        <input type="number" id="detectionThreshold" min="5" max="50" step="1" value="20" style="width: auto; font-size: 11px;">
+                    </div>
+                    
+                    <div class="control-group" style="display: flex; align-items: center; gap: 5px;">
+                        <label for="maxDetectionTime" style="font-size: 11px; white-space: nowrap;">最大检测时间（秒）</label>
+                        <input type="number" id="maxDetectionTime" min="10" max="300" step="10" value="60" style="width: auto; font-size: 11px;">
+                    </div>
+                </div>
+                
+                <div class="control-group" id="timePointsControl" style="display: none;">
+                    <label for="timePoints">指定时间点（秒，用逗号分隔）</label>
+                    <input type="text" id="timePoints" placeholder="例如：1,3,5,10">
+                </div>
+                
+                <div class="control-group">
+                    <label for="removeWatermark" style="display: flex; align-items: center; gap: 10px;">
+                        <span>去水印</span>
+                        <input type="checkbox" id="removeWatermark" style="width: auto;">
+                    </label>
+                </div>
+                
+                <div class="control-group">
+                    <label for="removeBackground" style="display: flex; align-items: center; gap: 10px;">
+                        <span>去背景色</span>
+                        <input type="checkbox" id="removeBackground" style="width: auto;">
+                    </label>
+                </div>
+                
+                <div id="watermarkControl" style="display: none; margin-top: 15px;">
+                    <h4>水印设置</h4>
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            <div class="control-group">
+                                <label for="selectWatermarkBtn">选择水印位置</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="extract-btn" id="selectWatermarkBtn" style="flex: 1; font-size: 12px; padding: 5px;">框选水印</button>
+                                    <select id="watermarkPresets" style="flex: 1; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                                        <option value="custom">自定义</option>
+                                        <option value="doubao">豆包</option>
+                                        <option value="top-left">左上角</option>
+                                        <option value="top-right">右上角</option>
+                                        <option value="bottom-left">左下角</option>
+                                        <option value="bottom-right">右下角</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="control-group" style="margin-top: 10px;">
+                                <label>水印区域</label>
+                                <div id="watermarkAreaDisplay" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <label style="font-size: 12px;">X:</label>
+                                        <input type="number" id="watermarkX" step="0.01" min="0" max="1" disabled style="width: 50px;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <label style="font-size: 12px;">Y:</label>
+                                        <input type="number" id="watermarkY" step="0.01" min="0" max="1" disabled style="width: 50px;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <label style="font-size: 12px;">W:</label>
+                                        <input type="number" id="watermarkW" step="0.01" min="0" max="1" disabled style="width: 50px;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <label style="font-size: 12px;">H:</label>
+                                        <input type="number" id="watermarkH" step="0.01" min="0" max="1" disabled style="width: 50px;">
+                                    </div>
+                                    <button class="extract-btn" id="updateWatermarkBtn" disabled style="font-size: 12px; padding: 5px;">更新</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width: 150px; height: 100px; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; position: relative; background-color: #ffffff; display: flex; justify-content: center; align-items: center;">
+                            <img id="watermarkPreview" style="max-width: 100%; max-height: 100%; object-fit: contain;" src="" alt="水印预览">
+                            <div id="watermarkPreviewOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="backgroundColorControl" style="display: none; margin-top: 25px;">
+                    <h4>背景色选择</h4>
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <div style="flex: 1;">
+                            <div class="control-group" style="display: flex; align-items: center; gap: 10px;">
+                                <label for="colorTolerance" style="white-space: nowrap;">颜色容差</label>
+                                <input type="range" id="colorTolerance" min="0" max="100" step="1" value="20" style="flex: 1;">
+                                <span id="toleranceValue">20</span>
+                            </div>
+                            <div class="control-group" style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                                <label for="edgeRemoval" style="display: flex; align-items: center; gap: 10px; white-space: nowrap;">
+                                    <span>穿透边缘去色</span>
+                                    <input type="checkbox" id="edgeRemoval" checked style="width: auto;">
+                                </label>
+                            </div>
+                            <div class="control-group" style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                                <label style="display: flex; align-items: center; gap: 10px; white-space: nowrap;">
+                                    <span>连续去色</span>
+                                    <input type="checkbox" id="continuousRemoval" checked style="width: auto;">
+                                </label>
+                            </div>
+                            <div class="control-group" style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+                                <label for="backgroundColorPicker" style="white-space: nowrap;">背景色选择</label>
+                                <input type="color" id="backgroundColorPicker" value="#ffffff" style="width: 50px;">
+                                <span id="currentColorDisplay">#ffffff</span>
+                            </div>
+                        </div>
+                        <div style="width: 150px; height: 100px; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; display: flex; justify-content: center; align-items: center; background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;">
+                            <img id="firstFramePreview" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: crosshair;" src="" alt="第一帧预览">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+        </div>
+        
+        <div class="right-bottom-panel">
+            <div class="preview-section">
+                <div style="margin-bottom: 15px;">
+                    <h3>提取的帧</h3>
+                    <div class="save-settings" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 10px; background-color: #f8f9fa; border-radius: 4px;">
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="display: flex; gap: 5px;">
+                                <input type="number" id="globalWidth" placeholder="宽度" style="width: 80px; padding: 3px; font-size: 11px;">
+                                <input type="number" id="globalHeight" placeholder="高度" style="width: 80px; padding: 3px; font-size: 11px;">
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="globalKeepRatio" checked>
+                                <label style="font-size: 11px;">保持比例</label>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <input type="checkbox" id="useOriginalRatio">
+                                <label style="font-size: 11px;">使用原图比例</label>
+                            </div>
+                        </div>
+                        <button class="extract-btn" id="zipAllFramesBtn" disabled style="width: auto; padding: 8px 16px;">打包下载</button>
+                    </div>
+                </div>
+                <div class="frames-container" id="framesContainer">
+                    <!-- 提取的帧将显示在这里 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
