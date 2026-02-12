@@ -15,75 +15,142 @@
             const uploadArea = document.getElementById('uploadArea');
             const videoFileInput = document.getElementById('videoFile');
             
+            // 点击事件处理
             uploadArea.addEventListener('click', () => {
-                videoFileInput.click();
-            });
-            
-            videoFileInput.addEventListener('change', handleFileSelect);
-            
-            // 拖拽功能
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.classList.add('dragover');
-            });
-            
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.classList.remove('dragover');
-            });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.classList.remove('dragover');
-                
-                if (e.dataTransfer.files.length > 0) {
-                    handleFile(e.dataTransfer.files[0]);
+                try {
+                    videoFileInput.click();
+                } catch (error) {
+                    console.error('点击上传失败:', error);
+                    showError('点击上传失败，请重试');
                 }
             });
+            
+            // 文件选择事件处理
+            videoFileInput.addEventListener('change', handleFileSelect);
+            
+            // 检查是否在移动设备上
+            const isMobile = navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/);
+            
+            // 拖拽功能（仅在非移动设备上启用，因为移动设备的拖拽行为不一致）
+            if (!isMobile) {
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('dragover');
+                });
+                
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.classList.remove('dragover');
+                });
+                
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('dragover');
+                    
+                    if (e.dataTransfer.files.length > 0) {
+                        handleFile(e.dataTransfer.files[0]);
+                    }
+                });
+            }
         }
         
         // 处理文件选择
         function handleFileSelect(e) {
-            if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
+            try {
+                if (e.target.files && e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                } else {
+                    // 兼容某些浏览器的FileList处理
+                    showError('未选择文件，请重试');
+                }
+            } catch (error) {
+                console.error('文件选择失败:', error);
+                showError('文件选择失败，请重试');
             }
         }
         
         // 处理文件
         function handleFile(file) {
-            if (!file.type.startsWith('video/')) {
-                showError('请上传视频文件');
-                return;
+            try {
+                // 检查文件是否有效
+                if (!file) {
+                    showError('文件无效，请重试');
+                    return;
+                }
+                
+                // 检查文件类型
+                if (!file.type || !file.type.startsWith('video/')) {
+                    // 对于某些浏览器可能没有type属性的情况，尝试通过扩展名判断
+                    const fileName = file.name || '';
+                    const extension = fileName.split('.').pop().toLowerCase();
+                    const videoExtensions = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'wmv', 'flv', 'mkv'];
+                    
+                    if (!videoExtensions.includes(extension)) {
+                        showError('请上传视频文件');
+                        return;
+                    }
+                }
+                
+                videoFile = file;
+                previewVideo(file);
+                document.getElementById('extractBtn').disabled = false;
+                showError('');
+            } catch (error) {
+                console.error('文件处理失败:', error);
+                showError('文件处理失败，请重试');
             }
-            
-            videoFile = file;
-            previewVideo(file);
-            document.getElementById('extractBtn').disabled = false;
-            showError('');
         }
         
         // 预览视频
         function previewVideo(file) {
-            const videoPreview = document.getElementById('videoPreview');
-            const previewVideo = document.getElementById('previewVideo');
-            
-            const videoURL = URL.createObjectURL(file);
-            previewVideo.src = videoURL;
-            videoElement = previewVideo;
-            
-            videoPreview.style.display = 'block';
-            
-            // 更新视频信息
-            document.getElementById('videoFileName').textContent = file.name;
-            document.getElementById('videoFileSize').textContent = formatFileSize(file.size);
-            
-            // 视频加载完成后更新分辨率和时长
-            previewVideo.addEventListener('loadedmetadata', function() {
-                document.getElementById('videoResolution').textContent = `${previewVideo.videoWidth} × ${previewVideo.videoHeight}`;
-                document.getElementById('videoDuration').textContent = formatTime(previewVideo.duration);
-            });
-            
-            // 自动加载第一帧到去背景色预览
-            loadFirstFrameForBackgroundRemoval();
+            try {
+                const videoPreview = document.getElementById('videoPreview');
+                const previewVideo = document.getElementById('previewVideo');
+                
+                // 检查元素是否存在
+                if (!videoPreview || !previewVideo) {
+                    console.error('预览元素不存在');
+                    return;
+                }
+                
+                // 创建视频URL
+                try {
+                    const videoURL = URL.createObjectURL(file);
+                    previewVideo.src = videoURL;
+                    videoElement = previewVideo;
+                } catch (urlError) {
+                    console.error('创建视频URL失败:', urlError);
+                    showError('视频加载失败，请重试');
+                    return;
+                }
+                
+                videoPreview.style.display = 'block';
+                
+                // 更新视频信息
+                document.getElementById('videoFileName').textContent = file.name || '未知文件名';
+                document.getElementById('videoFileSize').textContent = formatFileSize(file.size || 0);
+                
+                // 视频加载完成后更新分辨率和时长
+                previewVideo.addEventListener('loadedmetadata', function() {
+                    try {
+                        document.getElementById('videoResolution').textContent = `${previewVideo.videoWidth || 0} × ${previewVideo.videoHeight || 0}`;
+                        document.getElementById('videoDuration').textContent = formatTime(previewVideo.duration || 0);
+                    } catch (error) {
+                        console.error('更新视频信息失败:', error);
+                    }
+                });
+                
+                // 视频加载错误处理
+                previewVideo.addEventListener('error', function() {
+                    console.error('视频加载错误');
+                    showError('视频加载失败，请检查视频格式是否支持');
+                });
+                
+                // 自动加载第一帧到去背景色预览
+                setTimeout(loadFirstFrameForBackgroundRemoval, 100); // 延迟执行，确保视频元素已准备好
+            } catch (error) {
+                console.error('预览视频失败:', error);
+                showError('预览视频失败，请重试');
+            }
         }
         
         // 格式化文件大小
