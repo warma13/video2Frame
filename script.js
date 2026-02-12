@@ -520,7 +520,11 @@
                         break;
                     
                     case 'total':
-                        const totalFrames = parseInt(document.getElementById('totalFrames').value);
+                        let totalFrames = parseInt(document.getElementById('totalFrames').value);
+                        // 确保总帧数至少为1
+                        totalFrames = Math.max(1, totalFrames);
+                        // 清空之前的时间点
+                        timePoints = [];
                         for (let i = 0; i < totalFrames; i++) {
                             const t = (i / (totalFrames - 1)) * duration;
                             timePoints.push(t);
@@ -555,7 +559,9 @@
         async function detectStartEndFrames() {
             const startTime = parseFloat(document.getElementById('startTime').value);
             const firstFrameTime = parseFloat(document.getElementById('firstFrameTime').value);
-            const totalFrames = parseInt(document.getElementById('totalFrames').value);
+            let totalFrames = parseInt(document.getElementById('totalFrames').value);
+            // 确保总帧数至少为1
+            totalFrames = Math.max(1, totalFrames);
             const step = parseFloat(document.getElementById('detectionStep').value);
             const threshold = parseFloat(document.getElementById('detectionThreshold').value);
             const maxDetectionDuration = parseFloat(document.getElementById('maxDetectionTime').value);
@@ -1214,6 +1220,15 @@
             const globalHeight = parseInt(document.getElementById('globalHeight').value) || 0;
             const useOriginalRatio = document.getElementById('useOriginalRatio').checked;
             
+            // 获取视频文件名作为前缀
+            let videoFileName = 'frame';
+            if (videoFile) {
+                // 移除文件扩展名
+                videoFileName = videoFile.name.replace(/\.[^/.]+$/, "");
+                // 移除可能导致文件名问题的字符
+                videoFileName = videoFileName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
+            }
+            
             fetch(frameURL)
                 .then(response => response.blob())
                 .then(blob => {
@@ -1247,7 +1262,7 @@
                     const url = URL.createObjectURL(resizedBlob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `frame_${getCurrentTimeString()}_${frameIndex}.${extension}`;
+                    a.download = `${videoFileName}_${frameIndex}.${extension}`;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
@@ -1299,17 +1314,26 @@
                 const zip = new JSZip();
                 const folder = zip.folder('frames');
                 
+                // 获取视频文件名作为前缀
+                let videoFileName = 'frame';
+                if (videoFile) {
+                    // 移除文件扩展名
+                    videoFileName = videoFile.name.replace(/\.[^/.]+$/, "");
+                    // 移除可能导致文件名问题的字符
+                    videoFileName = videoFileName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
+                }
+                
                 // 为每个帧添加到ZIP文件
                 for (let i = 0; i < extractedFrames.length; i++) {
                     const frameURL = extractedFrames[i];
                     const response = await fetch(frameURL);
                     const blob = await response.blob();
-                    folder.file(`frame_${i + 1}.png`, blob);
+                    folder.file(`${videoFileName}_${i + 1}.png`, blob);
                 }
                 
                 // 生成ZIP文件并下载
                 const content = await zip.generateAsync({ type: 'blob' });
-                saveAs(content, `frames_${getCurrentTimeString()}.zip`);
+                saveAs(content, `${videoFileName}_frames.zip`);
             } catch (error) {
                 console.error('打包下载失败:', error);
                 showError('打包下载失败，请稍后重试');

@@ -1,0 +1,275 @@
+/* 手机端CSS样式 */
+@media (max-width: 768px) {
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        color: #333;
+        margin: 0;
+        overflow-x: hidden;
+    }
+    
+    .container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        padding: 10px;
+        max-width: 100vw;
+        width: 100%;
+        margin: 0 auto;
+        min-height: 100vh;
+    }
+    
+    h1 {
+        text-align: center;
+        margin: 0 0 10px 0;
+        color: #2c3e50;
+        font-size: 20px;
+    }
+    
+    /* 调整布局顺序：上传视频 -> 提取设置 -> 提取的帧 -> 播放控制 */
+    .left-panel {
+        order: 1;
+    }
+    
+    .right-top-panel {
+        order: 2;
+    }
+    
+    .right-bottom-panel {
+        order: 3;
+    }
+    
+    .playback-control {
+        order: 4;
+    }
+    
+    /* 确保所有内容区宽度不大于手机宽 */
+    .left-panel,
+    .right-top-panel,
+    .right-bottom-panel,
+    .playback-control,
+    .upload-section,
+    .controls-section,
+    .preview-section {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* 上传视频区域 */
+    .upload-section {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        min-height: 180px;
+        text-align: center;
+    }
+    
+    .upload-area {
+        border: 2px dashed #3498db;
+        border-radius: 6px;
+        padding: 20px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-icon {
+        font-size: 28px;
+        color: #3498db;
+        margin-bottom: 8px;
+    }
+    
+    /* 提取设置区域 */
+    .controls-section {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .control-group {
+        margin-bottom: 10px;
+    }
+    
+    .control-group label {
+        display: block;
+        margin-bottom: 2px;
+        font-weight: bold;
+        color: #555;
+        font-size: 12px;
+    }
+    
+    .control-group input,
+    .control-group select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .control-row {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .control-row .control-group {
+        width: 100%;
+        margin-bottom: 0;
+    }
+    
+    .extract-btn {
+        background-color: #27ae60;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        width: 100%;
+        margin-top: 5px;
+    }
+    
+    /* 提取的帧区域 */
+    .frames-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 10px;
+        margin-top: 15px;
+        overflow-y: auto;
+    }
+    
+    .frame-item {
+        text-align: center;
+        padding: 5px;
+        background-color: white;
+        border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+        margin: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .frame-image {
+        width: 100%;
+        height: auto;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    /* 播放控制区域 */
+    .preview-section {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* 视频预览 */
+    #previewVideo {
+        max-width: 100%;
+        max-height: 180px;
+        border-radius: 4px;
+    }
+    
+    h3 {
+        margin: 0 0 10px 0;
+        color: #34495e;
+        font-size: 16px;
+    }
+    
+    .small {
+        font-size: 12px;
+        color: #7f8c8d;
+    }
+    
+    /* 调整视频信息布局 */
+    #videoInfo {
+        width: 100%;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        text-align: left;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    
+    /* 调整播放控制按钮 */
+    #playbackPreview {
+        width: 100%;
+        height: 120px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    /* 调整保存设置布局 */
+    .save-settings {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+    }
+    
+    .save-settings > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        width: 100%;
+    }
+    
+    /* 调整水印设置布局 */
+    #watermarkControl > div {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    /* 调整背景色选择布局 */
+    #backgroundColorControl > div {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    /* 调整视频预览布局 */
+    .video-preview > div {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .video-preview > div > div:first-child {
+        width: 100%;
+    }
+    
+    /* 确保所有元素宽度不超过手机屏幕 */
+    * {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+}
