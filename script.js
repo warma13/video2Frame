@@ -1229,45 +1229,101 @@
                 videoFileName = videoFileName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
             }
             
-            fetch(frameURL)
-                .then(response => response.blob())
-                .then(blob => {
-                    return new Promise((resolve) => {
-                        const img = new Image();
-                        img.crossOrigin = 'anonymous';
-                        img.onload = function() {
-                            // 创建画布
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
+            try {
+                fetch(frameURL)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        return new Promise((resolve, reject) => {
+                            const img = new Image();
+                            img.crossOrigin = 'anonymous';
+                            img.onload = function() {
+                                try {
+                                    // 创建画布
+                                    const canvas = document.createElement('canvas');
+                                    const ctx = canvas.getContext('2d');
+                                    
+                                    // 设置画布大小，限制最大尺寸以避免移动端Canvas限制
+                                    let canvasWidth, canvasHeight;
+                                    if (!useOriginalRatio && globalWidth > 0 && globalHeight > 0) {
+                                        canvasWidth = globalWidth;
+                                        canvasHeight = globalHeight;
+                                    } else {
+                                        canvasWidth = img.width;
+                                        canvasHeight = img.height;
+                                    }
+                                    
+                                    // 限制Canvas大小，避免移动端限制
+                                    const maxCanvasSize = 4096; // 常见移动端Canvas大小限制
+                                    if (canvasWidth > maxCanvasSize || canvasHeight > maxCanvasSize) {
+                                        const scale = Math.min(maxCanvasSize / canvasWidth, maxCanvasSize / canvasHeight);
+                                        canvasWidth *= scale;
+                                        canvasHeight *= scale;
+                                    }
+                                    
+                                    canvas.width = canvasWidth;
+                                    canvas.height = canvasHeight;
+                                    
+                                    // 绘制图像
+                                    ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+                                    
+                                    // 转换为blob
+                                    canvas.toBlob(resolve, mimeType, 0.9);
+                                } catch (error) {
+                                    console.error('Canvas处理错误:', error);
+                                    // 如果Canvas处理失败，直接使用原始blob
+                                    resolve(blob);
+                                }
+                            };
+                            img.onerror = function() {
+                                reject(new Error('图片加载失败'));
+                            };
+                            img.src = URL.createObjectURL(blob);
+                        });
+                    })
+                    .then(resizedBlob => {
+                        try {
+                            const url = URL.createObjectURL(resizedBlob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `${videoFileName}_${frameIndex}.${extension}`;
                             
-                            // 设置画布大小
-                            if (!useOriginalRatio && globalWidth > 0 && globalHeight > 0) {
-                                canvas.width = globalWidth;
-                                canvas.height = globalHeight;
+                            // 确保链接在文档中
+                            document.body.appendChild(a);
+                            
+                            // 移动端兼容处理
+                            if (navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/)) {
+                                // 移动端需要触发真实点击
+                                const event = new MouseEvent('click', {
+                                    bubbles: true,
+                                    cancelable: true,
+                                    view: window
+                                });
+                                a.dispatchEvent(event);
                             } else {
-                                canvas.width = img.width;
-                                canvas.height = img.height;
+                                // 桌面端直接点击
+                                a.click();
                             }
                             
-                            // 绘制图像
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            
-                            // 转换为blob
-                            canvas.toBlob(resolve, mimeType, 0.9);
-                        };
-                        img.src = URL.createObjectURL(blob);
+                            // 延迟移除链接，确保下载完成
+                            setTimeout(() => {
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }, 100);
+                        } catch (error) {
+                            console.error('下载处理错误:', error);
+                            // 备用方案：直接打开链接
+                            const url = URL.createObjectURL(resizedBlob);
+                            window.open(url, '_blank');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('下载失败:', error);
+                        showError('下载失败，请重试');
                     });
-                })
-                .then(resizedBlob => {
-                    const url = URL.createObjectURL(resizedBlob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${videoFileName}_${frameIndex}.${extension}`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                });
+            } catch (error) {
+                console.error('下载初始化错误:', error);
+                showError('下载失败，请重试');
+            }
         }
         
         // 格式化时间
@@ -1310,6 +1366,19 @@
                 return;
             }
             
+            // 检查是否在移动端
+            const isMobile = navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/);
+            
+            // 在移动端，由于内存和API限制，建议使用单个下载
+            if (isMobile) {
+                showError('移动端建议使用单个下载，正在开始下载所有帧...');
+                // 延迟执行，让用户看到提示
+                setTimeout(() => {
+                    saveAllFrames();
+                }, 1000);
+                return;
+            }
+            
             try {
                 const zip = new JSZip();
                 const folder = zip.folder('frames');
@@ -1333,10 +1402,43 @@
                 
                 // 生成ZIP文件并下载
                 const content = await zip.generateAsync({ type: 'blob' });
-                saveAs(content, `${videoFileName}_frames.zip`);
+                
+                try {
+                    saveAs(content, `${videoFileName}_frames.zip`);
+                } catch (saveError) {
+                    console.error('保存ZIP文件失败:', saveError);
+                    // 备用方案：使用a标签下载
+                    const url = URL.createObjectURL(content);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${videoFileName}_frames.zip`;
+                    document.body.appendChild(a);
+                    
+                    // 触发点击
+                    if (navigator.userAgent.match(/(iPhone|iPad|iPod|Android)/)) {
+                        const event = new MouseEvent('click', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        });
+                        a.dispatchEvent(event);
+                    } else {
+                        a.click();
+                    }
+                    
+                    // 延迟移除
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                }
             } catch (error) {
                 console.error('打包下载失败:', error);
-                showError('打包下载失败，请稍后重试');
+                showError('打包下载失败，正在尝试单个下载...');
+                // 失败时尝试单个下载
+                setTimeout(() => {
+                    saveAllFrames();
+                }, 1000);
             }
         }
         
